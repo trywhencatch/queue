@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"distribute-job-queue/src/queue"
+	"distribute-job-queue/src/broker"
+	"distribute-job-queue/src/connection-manager"
 )
 
+
+
 func main() {
-	q := queue.NewQueue(10)
-	msg := queue.NewMessage("Hello there")
-	q.Enqueue(msg)
-	fmt.Print(q)
+	broker := broker.NewBroker()
+	broker.CreateQueue("test_queue")
+	connectionmanager.OpenConnection(broker.HandleClient)
 }

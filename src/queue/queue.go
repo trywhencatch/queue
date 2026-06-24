@@ -45,6 +45,7 @@ func (q *Queue) Enqueue(msg Message) error {
 	q.data[q.tail] = msg
 	q.size++
 	q.tail = (q.tail + 1) % q.capacity
+	fmt.Println("Message added to queue")
 	return nil
 }
 

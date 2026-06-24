@@ -1,8 +1,10 @@
 package broker
 
 import (
+	"bufio"
 	"distribute-job-queue/src/queue"
 	"fmt"
+	"net"
 )
 
 type Broker struct {
@@ -57,4 +59,26 @@ func (b *Broker) ListQueues() []string {
 	}
 
 	return queues
+}
+
+
+func (b *Broker) HandleClient(conn net.Conn) {
+	defer conn.Close()
+	reader := bufio.NewReader(conn)
+	for {
+		data, err := reader.ReadBytes('\n')
+		if err != nil {
+			fmt.Print(
+			"Failed to read data",err,
+			)
+			return
+		}
+
+		msg := queue.NewMessage(string(data))
+		err = b.Publish("test_queue",msg)
+		if err != nil {
+			fmt.Println("Failed to push to queue")
+		}
+
+	}
 }

@@ -17,7 +17,5 @@ func main(){
 	}
 
 	message := "Hello there\n"
-
 	conn.Write([]byte(message))
-
 }
