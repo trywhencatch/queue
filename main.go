@@ -1,14 +1,13 @@
 package main
 
 import (
-	"distribute-job-queue/src/broker"
-	"distribute-job-queue/src/connection-manager"
+	"distributed-job-queue/internals"
+	"distributed-job-queue/broker"
 )
 
-
-
 func main() {
-	broker := broker.NewBroker()
-	broker.CreateQueue("test_queue")
-	connectionmanager.OpenConnection(broker.HandleClient)
+	exchange := broker.NewExchange()
+	exchange.CreateQueue("test_queue")
+	go internals.OpenProducerConnection(exchange.HandleProducer)
+	internals.OpenConsumerConnection(exchange.HandleConsumer)
 }

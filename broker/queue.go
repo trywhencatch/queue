@@ -1,5 +1,4 @@
-package queue
-
+package broker
 
 // Ring Buffer
 
@@ -8,20 +7,10 @@ package queue
 // index it will wrap back then our head will be somewhere where the messages start from we will have this space for entries that we have
 // assumed to be gone
 
-
 import (
 	"fmt"
+	"sync"
 )
-
-type Message struct {
-	msg string
-}
-
-func NewMessage(msg string) Message {
-	return Message{
-		msg: msg,
-	}
-}
 
 type Queue struct {
 	data     []Message
@@ -29,29 +18,36 @@ type Queue struct {
 	tail     int
 	size     int
 	capacity int
+	mu sync.Mutex
+	cond sync.Cond
 }
 
-func NewQueue(capacity int) Queue {
-	return Queue{
+func NewQueue(capacity int) *Queue {
+	q := &Queue{
 		data:     make([]Message, capacity),
 		capacity: capacity,
 	}
+
+	q.cond = *sync.NewCond(&q.mu)
+	return q
 }
 
-func (q *Queue) Enqueue(msg Message) error {
-	if q.size == q.capacity {
-		return fmt.Errorf("queue capacity reached")
-	}
+func (q *Queue) Enqueue(msg Message) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
 	q.data[q.tail] = msg
 	q.size++
 	q.tail = (q.tail + 1) % q.capacity
-	fmt.Println("Message added to queue")
-	return nil
+
+	q.cond.Signal()
 }
 
 func (q *Queue) Dequeue() (Message, error) {
-	if q.size == 0 {
-		return Message{}, fmt.Errorf("queue empty")
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	for q.size == 0 {
+		q.cond.Wait()
 	}
 	returnVal := q.data[q.head]
 	q.size--
@@ -60,7 +56,7 @@ func (q *Queue) Dequeue() (Message, error) {
 }
 
 func (q *Queue) String() string {
-	return fmt.Sprintf("messages: %v, size:%d, tail: %d}", q.data, q.size, q.tail)
+	return fmt.Sprintf("messages: %v, size:%d, tail: %d", q.data, q.size, q.tail)
 }
 
 func (q *Queue) Peek() (Message, error) {
